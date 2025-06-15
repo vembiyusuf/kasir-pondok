@@ -1,0 +1,20 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+
+class UserSeeder extends Seeder
+{
+    public function run()
+    {
+        User::create([
+            'name' => 'Bang Saiful',
+            'email' => 'saiful@ppba.com',
+            'password' => Hash::make('ppba2025'),
+            'role' => 'kasir', // atau 'kasir' sesuai kebutuhan
+        ]);
+    }
+}
