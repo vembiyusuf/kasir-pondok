@@ -25,6 +25,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
 
     Route::resource('transactions', TransactionController::class);
+    Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    Route::get('/transactions/{transaction}/print', [TransactionController::class, 'print'])->name('transactions.print');
     Route::get('transactions/{transaction}/receipt', [TransactionController::class, 'receipt'])
         ->name('transactions.receipt');
+    // Add this with your other transaction routes
+    Route::get('/transactions/{transaction}/print', [TransactionController::class, 'print'])
+        ->name('transactions.print');
 });

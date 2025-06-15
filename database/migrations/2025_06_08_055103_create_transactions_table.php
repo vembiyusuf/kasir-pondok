@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('invoice_code')->unique();
             $table->foreignId('user_id')->constrained();
+            $table->enum('payment_method', ['cash', 'card', 'transfer']);
+            $table->integer('subtotal_amount');
+            $table->integer('discount_amount')->default(0);
             $table->integer('total_amount');
             $table->integer('amount_paid');
             $table->integer('change');

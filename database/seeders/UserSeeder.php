@@ -16,5 +16,11 @@ class UserSeeder extends Seeder
             'password' => Hash::make('ppba2025'),
             'role' => 'kasir', // atau 'kasir' sesuai kebutuhan
         ]);
+        User::create([
+            'name' => 'Vembi Yusuf',
+            'email' => 'vembisaputra273@gmail.com',
+            'password' => Hash::make('ppba2025'),
+            'role' => 'kasir', // atau 'kasir' sesuai kebutuhan
+        ]);
     }
 }

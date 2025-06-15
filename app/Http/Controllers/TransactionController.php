@@ -86,83 +86,96 @@ class TransactionController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'items.*.serving_name' => 'nullable|string', // Changed from serving_type to serving_name
+            'items.*.serving_name' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) use ($request) {
+                    $index = str_replace(['items.', '.serving_name'], '', $attribute);
+                    $product = Product::find($request->items[$index]['product_id']);
+                    if ($value && $product->servings) {
+                        $servings = json_decode($product->servings, true);
+                        if (!collect($servings)->contains('name', $value)) {
+                            $fail('Jenis penyajian tidak valid untuk produk ini.');
+                        }
+                    }
+                }
+            ],
             'payment_method' => 'required|in:cash,card,transfer',
-            'amount_paid' => 'required|numeric|min:0',
-            'customer_name' => 'nullable|string|max:255',
+            'amount_paid' => 'required|integer|min:0',
+            'discount_amount' => 'nullable|integer|min:0',
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Calculate total
-            $total = 0;
+            // Calculate total (using integer for money)
+            $subtotal = 0;
             $itemsData = [];
 
             foreach ($request->items as $item) {
                 $product = Product::with('category')->findOrFail($item['product_id']);
 
-                // Check stock
                 if ($product->stock < $item['quantity']) {
                     throw new \Exception("Stok {$product->name} tidak mencukupi");
                 }
 
-                // Determine the price based on serving selection
-                $price = $product->price; // Default price
+                // Determine price
+                $price = $product->price;
                 $servingName = $item['serving_name'] ?? null;
 
                 if ($servingName && $product->servings) {
                     $servings = json_decode($product->servings, true);
                     $selectedServing = collect($servings)->firstWhere('name', $servingName);
-
-                    if ($selectedServing) {
-                        $price = $selectedServing['price'];
-                    }
+                    $price = $selectedServing ? $selectedServing['price'] : $price;
                 }
 
-                $subtotal = $price * $item['quantity'];
-                $total += $subtotal;
+                $itemSubtotal = $price * $item['quantity'];
+                $subtotal += $itemSubtotal;
 
                 $itemsData[] = [
                     'product' => $product,
                     'quantity' => $item['quantity'],
                     'serving_name' => $servingName,
                     'price' => $price,
-                    'subtotal' => $subtotal
+                    'subtotal' => $itemSubtotal
                 ];
             }
 
-            // Check if payment is sufficient
-            if ($request->amount_paid < $total) {
+            // Calculate totals (using integer)
+            $discountAmount = (int)($request->discount_amount ?? 0);
+            $total = $subtotal - $discountAmount;
+
+            if ($total < 0) {
+                throw new \Exception("Diskon tidak boleh lebih besar dari subtotal");
+            }
+
+            $amountPaid = (int)$request->amount_paid;
+            if ($amountPaid < $total) {
                 throw new \Exception("Jumlah pembayaran tidak mencukupi");
             }
 
-            // Generate invoice code
-            $invoiceCode = 'INV-' . date('Ymd') . '-' . str_pad(Transaction::count() + 1, 4, '0', STR_PAD_LEFT);
-
-            // Create transaction
+            // Create transaction (all fields included)
             $transaction = Transaction::create([
-                'invoice_code' => $invoiceCode,
+                'invoice_code' => 'INV-' . date('Ymd') . '-' . str_pad(Transaction::count() + 1, 4, '0', STR_PAD_LEFT),
                 'user_id' => Auth::id(),
-                'customer_name' => $request->customer_name,
-                'total_amount' => $total,
                 'payment_method' => $request->payment_method,
-                'amount_paid' => $request->amount_paid,
-                'change' => $request->amount_paid - $total,
-                'created_at' => now(),
+                'subtotal_amount' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'total_amount' => $total,
+                'amount_paid' => $amountPaid,
+                'change' => $amountPaid - $total,
             ]);
 
-            // Create transaction details and update stock
+            // Create transaction details
             foreach ($itemsData as $itemData) {
                 TransactionDetail::create([
                     'transaction_id' => $transaction->id,
                     'product_id' => $itemData['product']->id,
                     'quantity' => $itemData['quantity'],
                     'price_at_time' => $itemData['price'],
-                    'serving_type' => $itemData['serving_name'], // Store serving name instead of type
+                    'serving_type' => $itemData['serving_name'],
                 ]);
 
-                // Update stock
                 $itemData['product']->decrement('stock', $itemData['quantity']);
             }
 
@@ -172,7 +185,11 @@ class TransactionController extends Controller
                 'success' => true,
                 'message' => 'Transaksi berhasil',
                 'transaction_id' => $transaction->id,
-                'change' => $request->amount_paid - $total
+                'subtotal' => $subtotal,
+                'discount' => $discountAmount,
+                'total' => $total,
+                'amount_paid' => $amountPaid,
+                'change' => $amountPaid - $total
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -182,7 +199,6 @@ class TransactionController extends Controller
             ], 400);
         }
     }
-
 
     public function getProduct($id)
     {
@@ -201,6 +217,15 @@ class TransactionController extends Controller
             'stock' => $product->stock,
             'category' => $product->category->name,
             'servings' => $servings
+        ]);
+    }
+
+    public function print(Transaction $transaction)
+    {
+        $transaction->load('details.product');
+
+        return view('transactions.print', [
+            'transaction' => $transaction
         ]);
     }
 }

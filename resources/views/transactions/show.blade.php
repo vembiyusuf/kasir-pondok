@@ -90,11 +90,13 @@
                             <tr>
                                 <th class="px-4 py-2 text-left">No</th>
                                 <th class="px-4 py-2 text-left">Produk</th>
+                                <th class="px-4 py-2 text-left">Penyajian</th> <!-- Tambahkan ini -->
                                 <th class="px-4 py-2 text-right">Harga Satuan</th>
                                 <th class="px-4 py-2 text-right">Jumlah</th>
                                 <th class="px-4 py-2 text-right">Subtotal</th>
                             </tr>
                         </thead>
+
                         <tbody class="divide-y">
                             @foreach ($transaction->details as $item)
                                 <tr>
@@ -103,6 +105,8 @@
                                         <div class="font-medium">{{ $item->product->name }}</div>
                                         <div class="text-xs text-gray-500">{{ $item->product->category->name }}</div>
                                     </td>
+                                    <!-- Di sini tambahkan kolom Penyajian -->
+                                    <td class="px-4 py-2">{{ $item->serving_type ?? '-' }}</td>
                                     <td class="px-4 py-2 text-right">Rp
                                         {{ number_format($item->price_at_time, 0, ',', '.') }}</td>
                                     <td class="px-4 py-2 text-right">{{ $item->quantity }}</td>
@@ -111,6 +115,7 @@
                                 </tr>
                             @endforeach
                         </tbody>
+
                         <tfoot class="bg-gray-50 font-medium">
                             <tr>
                                 <td colspan="4" class="px-4 py-2 text-right">Total</td>

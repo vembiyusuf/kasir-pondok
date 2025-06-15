@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-screen">
-        <!-- Product Selection (Scrollable with min-height) -->
+        <!-- Product Selection -->
         <div class="bg-white rounded-lg shadow-sm min-h-screen flex flex-col">
             <div class="p-6 border-b flex-shrink-0">
                 <h2 class="text-lg font-semibold">Pilih Produk</h2>
@@ -26,7 +26,8 @@
                                     <div class="product-card border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition duration-200"
                                         data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}"
                                         data-product-price="{{ $product->price }}"
-                                        data-product-stock="{{ $product->stock }}" data-category="{{ $category->name }}">
+                                        data-product-stock="{{ $product->stock }}" data-category="{{ $category->name }}"
+                                        data-servings="{{ $product->servings }}">
                                         <div class="flex justify-between items-start">
                                             <div class="flex-1">
                                                 <h4 class="font-medium text-sm">{{ $product->name }}</h4>
@@ -54,26 +55,50 @@
             </div>
         </div>
 
-        <!-- Cart & Checkout (Fixed 100vh) -->
+        <!-- Cart & Checkout -->
         <div class="bg-white rounded-lg shadow-sm h-screen flex flex-col">
             <div class="p-6 border-b flex-shrink-0">
                 <h2 class="text-lg font-semibold">Keranjang Belanja</h2>
             </div>
-            <div class="p-6 flex flex-col flex-grow overflow-hidden">
-                <!-- Cart Items (Scrollable) -->
-                <div class="flex-grow overflow-y-auto mb-4" style="max-height: calc(100vh - 400px);">
-                    <div id="cart-items" class="space-y-3">
-                        <div id="empty-cart" class="text-gray-500 text-center py-8">
-                            Keranjang masih kosong
-                        </div>
+
+            <!-- Scrollable Cart Area with Minimum Height for 4 Items -->
+            <div class="flex-1 overflow-y-auto border-b border-gray-200" style="min-height: 320px; max-height: 40vh;">
+                <div id="cart-items" class="p-4 space-y-3">
+                    <!-- Empty cart placeholder -->
+                    <div id="empty-cart"
+                        class="text-gray-500 text-center py-8 h-full flex flex-col justify-center items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-2" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>Keranjang masih kosong</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Fixed bottom section -->
-                <div class="flex-shrink-0 space-y-4">
-                    <!-- Total -->
-                    <div class="border-t pt-4">
-                        <div class="flex justify-between items-center text-lg font-semibold">
+            <!-- Scrollable Checkout Section -->
+            <div class="flex-1 overflow-y-auto bg-white" style="min-height: 400px;">
+                <div class="p-6">
+                    <!-- Discount -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Diskon (Rp)</label>
+                        <input type="number" id="discount-amount" min="0" step="1000"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder="0">
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div class="space-y-2 mb-4 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Subtotal:</span>
+                            <span id="subtotal-amount" class="font-medium">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Diskon:</span>
+                            <span id="discount-display" class="font-medium">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg font-semibold border-t pt-2">
                             <span>Total:</span>
                             <span id="total-amount">Rp 0</span>
                         </div>
@@ -93,7 +118,7 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Bayar</label>
-                            <input type="number" id="amount-paid" min="0" step="0.01"
+                            <input type="number" id="amount-paid" min="0" step="1000"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                                 placeholder="0">
                         </div>
@@ -107,10 +132,14 @@
                             </div>
                         </div>
 
-                        <button id="process-transaction" disabled
-                            class="w-full bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition duration-200">
-                            Proses Transaksi
-                        </button>
+                        <!-- Process Transaction Button -->
+                        <div class="pt-4 border-t">
+                            <button id="process-transaction" disabled
+                                class="w-full bg-green-600 text-white py-3 px-4 rounded-md font-medium hover:bg-green-700
+                               disabled:bg-gray-300 disabled:cursor-not-allowed transition duration-200 shadow-lg">
+                                PROSES TRANSAKSI
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -147,19 +176,33 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold mb-2">Transaksi Berhasil!</h3>
-                <p class="text-gray-600 mb-4">
-                    <span id="success-change-text"></span>
-                </p>
+                <div class="text-left mb-4 space-y-1">
+                    <p class="text-gray-600"><span class="font-medium">Subtotal:</span> <span id="success-subtotal">Rp
+                            0</span></p>
+                    <p class="text-gray-600"><span class="font-medium">Diskon:</span> <span id="success-discount">Rp
+                            0</span></p>
+                    <p class="text-gray-600"><span class="font-medium">Total:</span> <span id="success-total">Rp 0</span>
+                    </p>
+                    <p class="text-gray-600"><span class="font-medium">Bayar:</span> <span id="success-paid">Rp 0</span>
+                    </p>
+                    <p class="text-gray-600"><span class="font-medium">Kembalian:</span> <span id="success-change">Rp
+                            0</span></p>
+                </div>
                 <button id="new-transaction" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
                     Transaksi Baru
+                </button>
+                <button id="print-receipt" class="ml-2 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
+                    Cetak Struk
                 </button>
             </div>
         </div>
     </div>
 
+
     <script>
         let cart = [];
         let currentProduct = null;
+        let lastTransactionId = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             initializeEventListeners();
@@ -171,6 +214,9 @@
 
             // Payment amount change
             document.getElementById('amount-paid')?.addEventListener('input', calculateChange);
+
+            // Discount amount change
+            document.getElementById('discount-amount')?.addEventListener('input', updateTotal);
 
             // Process transaction button
             document.getElementById('process-transaction')?.addEventListener('click', processTransaction);
@@ -226,23 +272,17 @@
             const productPrice = parseFloat(card.dataset.productPrice);
             const productStock = parseInt(card.dataset.productStock);
             const category = card.dataset.category;
+            const servingsData = card.dataset.servings;
 
-            // Parse servings from data attributes or fetch from server
-            const servings = [];
-            const servingElements = card.querySelectorAll('.text-xs.text-gray-500');
-            servingElements.forEach(el => {
-                const text = el.textContent.trim();
-                if (text.includes(':') && !text.includes('Stok:')) { // Exclude stock info
-                    const [name, priceStr] = text.split(':');
-                    const price = parseFloat(priceStr.replace('Rp', '').replace(/\./g, '').trim());
-                    if (name && !isNaN(price)) {
-                        servings.push({
-                            name: name.trim(),
-                            price: price
-                        });
-                    }
+            // Parse servings from data attribute
+            let servings = [];
+            try {
+                if (servingsData) {
+                    servings = JSON.parse(servingsData);
                 }
-            });
+            } catch (e) {
+                console.error('Error parsing servings data:', e);
+            }
 
             if (productStock <= 0) {
                 alert('Stok habis!');
@@ -252,15 +292,15 @@
             currentProduct = {
                 id: productId,
                 name: productName,
-                basePrice: productPrice, // Simpan harga dasar
-                price: productPrice, // Harga yang bisa berubah berdasarkan penyajian
+                basePrice: productPrice,
+                price: productPrice,
                 stock: productStock,
                 category: category,
                 servings: servings
             };
 
             // Show serving modal if product has servings
-            if (servings.length > 0) {
+            if (servings && servings.length > 0) {
                 showServingTypeModal();
             } else {
                 addToCart(currentProduct, null);
@@ -275,25 +315,25 @@
 
             optionsContainer.innerHTML = '';
 
-            // Add default option (base price) - REMOVED STOCK INFO
+            // Add default option (base price)
             const defaultDiv = document.createElement('div');
             defaultDiv.innerHTML = `
-        <label class="flex items-center">
-            <input type="radio" name="serving_type" value="" class="mr-2" checked>
-            <span>Standar - Rp ${currentProduct.basePrice.toLocaleString('id-ID')}</span>
-        </label>
-    `;
+                <label class="flex items-center">
+                    <input type="radio" name="serving_type" value="" class="mr-2" checked>
+                    <span>Standar - Rp ${currentProduct.basePrice.toLocaleString('id-ID')}</span>
+                </label>
+            `;
             optionsContainer.appendChild(defaultDiv);
 
-            // Add serving options - REMOVED STOCK INFO
+            // Add serving options
             currentProduct.servings.forEach(serving => {
                 const div = document.createElement('div');
                 div.innerHTML = `
-            <label class="flex items-center">
-                <input type="radio" name="serving_type" value="${serving.name}" class="mr-2">
-                <span>${serving.name} - Rp ${serving.price.toLocaleString('id-ID')}</span>
-            </label>
-        `;
+                    <label class="flex items-center">
+                        <input type="radio" name="serving_type" value="${serving.name}" class="mr-2">
+                        <span>${serving.name} - Rp ${serving.price.toLocaleString('id-ID')}</span>
+                    </label>
+                `;
                 optionsContainer.appendChild(div);
             });
 
@@ -328,7 +368,6 @@
             addToCart(productToAdd, servingName || null);
             closeServingTypeModal();
         }
-
 
         function closeServingTypeModal() {
             const modal = document.getElementById('serving-type-modal');
@@ -389,21 +428,21 @@
             }
 
             const cartHTML = cart.map((item, index) => `
-        <div class="flex items-center justify-between p-3 border rounded-md">
-            <div class="flex-1">
-                <h4 class="font-medium text-sm">${item.name}</h4>
-                ${item.servingName ? `<p class="text-xs text-gray-500">${item.servingName}</p>` : ''}
-                <p class="text-xs text-gray-500">Rp ${item.price.toLocaleString('id-ID')}</p>
-                <p class="text-xs text-gray-500">Stok tersedia: ${item.stock}</p>
-            </div>
-            <div class="flex items-center space-x-2">
-                <button onclick="updateQuantity(${index}, -1)" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-300">-</button>
-                <span class="px-2 text-sm">${item.quantity}</span>
-                <button onclick="updateQuantity(${index}, 1)" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-300">+</button>
-                <button onclick="removeFromCart(${index})" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 ml-2">×</button>
-            </div>
-        </div>
-    `).join('');
+                <div class="flex items-center justify-between p-3 border rounded-md">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-sm">${item.name}</h4>
+                        ${item.servingName ? `<p class="text-xs text-gray-500">${item.servingName}</p>` : ''}
+                        <p class="text-xs text-gray-500">Rp ${item.price.toLocaleString('id-ID')}</p>
+                        <p class="text-xs text-gray-500">Stok tersedia: ${item.stock}</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="updateQuantity(${index}, -1)" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-300">-</button>
+                        <span class="px-2 text-sm">${item.quantity}</span>
+                        <button onclick="updateQuantity(${index}, 1)" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-300">+</button>
+                        <button onclick="removeFromCart(${index})" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 ml-2">×</button>
+                    </div>
+                </div>
+            `).join('');
 
             cartContainer.innerHTML = cartHTML;
         }
@@ -441,11 +480,14 @@
         }
 
         function updateTotal() {
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const totalElement = document.getElementById('total-amount');
-            if (totalElement) {
-                totalElement.textContent = `Rp ${total.toLocaleString('id-ID')}`;
-            }
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const discountAmount = parseFloat(document.getElementById('discount-amount')?.value) || 0;
+            const total = subtotal - discountAmount;
+
+            // Update display
+            document.getElementById('subtotal-amount').textContent = `Rp ${subtotal.toLocaleString('id-ID')}`;
+            document.getElementById('discount-display').textContent = `Rp ${discountAmount.toLocaleString('id-ID')}`;
+            document.getElementById('total-amount').textContent = `Rp ${Math.max(total, 0).toLocaleString('id-ID')}`;
 
             calculateChange();
 
@@ -456,7 +498,9 @@
         }
 
         function calculateChange() {
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const discountAmount = parseFloat(document.getElementById('discount-amount')?.value) || 0;
+            const total = Math.max(subtotal - discountAmount, 0);
             const amountPaidInput = document.getElementById('amount-paid');
             const amountPaid = amountPaidInput ? parseFloat(amountPaidInput.value) || 0 : 0;
             const change = amountPaid - total;
@@ -480,7 +524,9 @@
                 return;
             }
 
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const discountAmount = parseFloat(document.getElementById('discount-amount')?.value) || 0;
+            const total = Math.max(subtotal - discountAmount, 0);
             const amountPaidInput = document.getElementById('amount-paid');
             const amountPaid = amountPaidInput ? parseFloat(amountPaidInput.value) || 0 : 0;
 
@@ -496,12 +542,11 @@
                 items: cart.map(item => ({
                     product_id: item.id,
                     quantity: item.quantity,
-                    serving_name: item.servingName || null,
-                    price: item.price
+                    serving_name: item.servingName || null // Make sure this matches backend expectation
                 })),
                 payment_method: paymentMethod,
                 amount_paid: amountPaid,
-                total_amount: total
+                discount_amount: discountAmount
             };
 
             const processBtn = document.getElementById('process-transaction');
@@ -521,20 +566,23 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json().then(err => {
+                            throw err;
+                        });
                     }
                     return response.json();
                 })
                 .then(data => {
                     if (data.success) {
-                        showSuccessModal(data.change || 0);
+                        lastTransactionId = data.transaction_id;
+                        showSuccessModal(data);
                     } else {
                         alert(data.message || 'Terjadi kesalahan');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Terjadi kesalahan saat memproses transaksi: ' + error.message);
+                    alert(error.message || 'Terjadi kesalahan saat memproses transaksi');
                 })
                 .finally(() => {
                     if (processBtn) {
@@ -544,15 +592,33 @@
                 });
         }
 
-        function showSuccessModal(change) {
+        function showSuccessModal(data) {
             const modal = document.getElementById('success-modal');
-            const changeText = document.getElementById('success-change-text');
+            if (!modal) return;
 
-            if (modal && changeText) {
-                changeText.textContent = `Kembalian: Rp ${change.toLocaleString('id-ID')}`;
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
+            // Update success modal with transaction details
+            document.getElementById('success-subtotal').textContent = `Rp ${data.subtotal.toLocaleString('id-ID')}`;
+            document.getElementById('success-discount').textContent = `Rp ${data.discount.toLocaleString('id-ID')}`;
+            document.getElementById('success-total').textContent = `Rp ${data.total.toLocaleString('id-ID')}`;
+            document.getElementById('success-paid').textContent = `Rp ${data.amount_paid.toLocaleString('id-ID')}`;
+            document.getElementById('success-change').textContent = `Rp ${data.change.toLocaleString('id-ID')}`;
+
+            // Remove any existing print button event listener
+            const oldPrintBtn = document.getElementById('print-receipt');
+            if (oldPrintBtn) {
+                oldPrintBtn.replaceWith(oldPrintBtn.cloneNode(true));
             }
+
+            // Add event listener to new print button
+            const printBtn = document.getElementById('print-receipt');
+            if (printBtn) {
+                printBtn.addEventListener('click', () => {
+                    window.open(`/transactions/${data.transaction_id}/print`, '_blank');
+                });
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
         function newTransaction() {
@@ -562,14 +628,10 @@
             updateTotal();
 
             // Reset form
-            const amountPaidInput = document.getElementById('amount-paid');
-            if (amountPaidInput) amountPaidInput.value = '';
-
-            const paymentMethodSelect = document.getElementById('payment-method');
-            if (paymentMethodSelect) paymentMethodSelect.value = 'cash';
-
-            const changeDisplay = document.getElementById('change-display');
-            if (changeDisplay) changeDisplay.classList.add('hidden');
+            document.getElementById('discount-amount').value = '';
+            document.getElementById('amount-paid').value = '';
+            document.getElementById('payment-method').value = 'cash';
+            document.getElementById('change-display').classList.add('hidden');
 
             // Close modal
             const modal = document.getElementById('success-modal');
