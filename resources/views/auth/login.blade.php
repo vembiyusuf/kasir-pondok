@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Login - Kasir Pondok</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body class="bg-gradient-to-br from-green-100 to-green-300 min-h-screen flex items-center justify-center">

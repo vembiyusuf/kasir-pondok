@@ -14,7 +14,9 @@ class Transaction extends Model
         'discount_amount',
         'total_amount',
         'amount_paid',
-        'change'
+        'change',
+        'customer_name',
+        'payment_status'
     ];
 
     public function user()

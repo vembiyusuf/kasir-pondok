@@ -65,6 +65,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
             'Kasir',
             'Tanggal',
             'Metode Pembayaran',
+            'Pelanggan & Status', // Combined column
             'Diskon',
             'Nama Produk',
             'Jenis Penyajian',
@@ -91,11 +92,21 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
             'transfer' => 'Transfer'
         ];
 
+        $paymentStatusMap = [
+            'paid' => 'Lunas',
+            'unpaid' => 'Tidak Lunas'
+        ];
+
+        // Combine customer name and payment status
+        $customerAndStatus = $transaction->customer_name ?? '-';
+        $customerAndStatus .= "\n(" . ($paymentStatusMap[$transaction->payment_status] ?? $transaction->payment_status) . ")";
+
         return [
             $transaction->invoice_code,
             $transaction->user->name ?? 'Tidak Ada',
             $transaction->created_at->format('d-m-Y H:i'),
             $paymentMethodMap[$transaction->payment_method] ?? $transaction->payment_method,
+            $customerAndStatus, // Combined field
             $formatRupiah($transaction->discount_amount),
             $detail ? $detail->product->name ?? 'Produk Tidak Ditemukan' : 'Tidak Ada Produk',
             $detail ? ($detail->serving_type ?? 'Standar') : 'Standar',
@@ -114,7 +125,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
         $lastRow = $this->transactions->flatMap(fn($t) => $t->details)->count() + $this->transactions->count() + 1;
 
         // Apply basic styling to all cells
-        $sheet->getStyle('A1:N' . $lastRow)->applyFromArray([
+        $sheet->getStyle('A1:O' . $lastRow)->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -124,7 +135,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
         ]);
 
         // Header style
-        $sheet->getStyle('A1:N1')->applyFromArray([
+        $sheet->getStyle('A1:O1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF']
@@ -139,6 +150,11 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
             ],
         ]);
 
+        // Enable text wrapping for the combined column
+        $sheet->getStyle('E2:E' . $lastRow)
+            ->getAlignment()
+            ->setWrapText(true);
+
         // Process each transaction group for merging and coloring
         $colorIndex = 0;
         $colors = ['E8F5E9', 'E3F2FD', 'FFF8E1', 'F3E5F5']; // Light green, blue, yellow, purple
@@ -152,35 +168,44 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
             $sheet->mergeCells("B{$group['start_row']}:B{$group['end_row']}");
             $sheet->mergeCells("C{$group['start_row']}:C{$group['end_row']}");
             $sheet->mergeCells("D{$group['start_row']}:D{$group['end_row']}");
-            $sheet->mergeCells("E{$group['start_row']}:E{$group['end_row']}");
+            $sheet->mergeCells("E{$group['start_row']}:E{$group['end_row']}"); // Combined column
+            $sheet->mergeCells("F{$group['start_row']}:F{$group['end_row']}"); // Diskon
 
-            // Merge cells for total, payment, and change (like in invoice)
-            $sheet->mergeCells("K{$group['start_row']}:K{$group['end_row']}");
-            $sheet->mergeCells("L{$group['start_row']}:L{$group['end_row']}");
-            $sheet->mergeCells("M{$group['start_row']}:M{$group['end_row']}");
+            // Merge cells for total, payment, and change
+            $sheet->mergeCells("L{$group['start_row']}:L{$group['end_row']}"); // Total Harga
+            $sheet->mergeCells("M{$group['start_row']}:M{$group['end_row']}"); // Jumlah Bayar
+            $sheet->mergeCells("N{$group['start_row']}:N{$group['end_row']}"); // Kembalian
 
             // Apply alternating colors to each transaction group
-            $sheet->getStyle("A{$group['start_row']}:N{$group['end_row']}")
+            $sheet->getStyle("A{$group['start_row']}:O{$group['end_row']}")
                 ->getFill()
                 ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()
                 ->setRGB($color);
 
             // Center alignment for all merged cells
-            $sheet->getStyle("A{$group['start_row']}:E{$group['end_row']}")
+            $sheet->getStyle("A{$group['start_row']}:F{$group['end_row']}")
                 ->getAlignment()
                 ->setVertical('center');
 
-            $sheet->getStyle("K{$group['start_row']}:M{$group['end_row']}")
+            $sheet->getStyle("L{$group['start_row']}:N{$group['end_row']}")
                 ->getAlignment()
                 ->setVertical('center')
                 ->setHorizontal('right');
+
+            // Style for payment status in combined column
+            $paymentStatusStyle = $sheet->getStyle("E{$group['start_row']}");
+            $paymentStatusStyle->getFont()->setBold(true);
+
+            // Color based on payment status
+            $paymentColor = $group['transaction']->payment_status === 'paid' ? '2E7D32' : 'C62828';
+            $paymentStatusStyle->getFont()->getColor()->setRGB($paymentColor);
         }
 
         // Alignment styles
         $sheet->getStyle('A2:F' . $lastRow)->getAlignment()->setHorizontal('left');
-        $sheet->getStyle('G2:J' . $lastRow)->getAlignment()->setHorizontal('right');
-        $sheet->getStyle('N2:N' . $lastRow)->getAlignment()->setHorizontal('left');
+        $sheet->getStyle('G2:K' . $lastRow)->getAlignment()->setHorizontal('right');
+        $sheet->getStyle('O2:O' . $lastRow)->getAlignment()->setHorizontal('left');
     }
 
     public function columnWidths(): array
@@ -190,16 +215,17 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
             'B' => 25,  // Kasir
             'C' => 25,  // Tanggal
             'D' => 20,  // Metode Pembayaran
-            'E' => 20,  // Diskon
-            'F' => 35,  // Nama Produk
-            'G' => 20,  // Jenis Penyajian
-            'H' => 13,  // Qty
-            'I' => 35,  // Harga Satuan
-            'J' => 20,  // Subtotal
-            'K' => 23,  // Total Harga
-            'L' => 26,  // Jumlah Bayar
-            'M' => 21,  // Kembalian
-            'N' => 30,  // Catatan
+            'E' => 30,  // Pelanggan & Status (wider for combined info)
+            'F' => 20,  // Diskon
+            'G' => 35,  // Nama Produk
+            'H' => 20,  // Jenis Penyajian
+            'I' => 13,  // Qty
+            'J' => 35,  // Harga Satuan
+            'K' => 20,  // Subtotal
+            'L' => 23,  // Total Harga
+            'M' => 26,  // Jumlah Bayar
+            'N' => 21,  // Kembalian
+            'O' => 30,  // Catatan
         ];
     }
 }

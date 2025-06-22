@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir Pondok - @yield('title')</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- CDN FontAwesome versi 5 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
 </head>
 
 <body class="bg-gray-100 font-sans">
@@ -52,18 +53,19 @@
                         Kasir
                     </div>
                 </a>
-
-                <a href="{{ route('products.index') }}"
-                    class="block mt-1 py-2.5 px-4 rounded transition duration-200 hover:bg-green-700 {{ request()->routeIs('products.*') ? 'bg-green-700' : '' }}">
-                    <div class="flex items-center">
-                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        Manajemen Produk
-                    </div>
-                </a>
+                @if (auth()->check() && auth()->user()->role === 'admin')
+                    <a href="{{ route('products.index') }}"
+                        class="block mt-1 py-2.5 px-4 rounded transition duration-200 hover:bg-green-700 {{ request()->routeIs('products.*') ? 'bg-green-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            Manajemen Produk
+                        </div>
+                    </a>
+                @endif
 
                 <a href="{{ route('transactions.index') }}"
                     class="block mt-1 py-2.5 px-4 rounded transition duration-200 hover:bg-green-700 {{ request()->routeIs('transactions.index') ? 'bg-green-700' : '' }}">
@@ -77,19 +79,19 @@
                     </div>
                 </a>
 
-                @if (auth()->user()->role === 'admin')
-                    <a href="{{ route('reports.index') }}"
-                        class="block mt-1 py-2.5 px-4 rounded transition duration-200 hover:bg-green-700 {{ request()->routeIs('reports.*') ? 'bg-green-700' : '' }}">
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Rekap Penjualan
-                        </div>
-                    </a>
-                @endif
+
+                {{-- <a href="{{ route('reports.index') }}"
+                    class="block mt-1 py-2.5 px-4 rounded transition duration-200 hover:bg-green-700 {{ request()->routeIs('reports.*') ? 'bg-green-700' : '' }}">
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Rekap Penjualan
+                    </div>
+                </a> --}}
+
             </nav>
         </div>
 

@@ -47,7 +47,7 @@ class TransactionController extends Controller
     {
         $transaction->load(['user', 'details.product.category']);
         // Render struk di view baru
-        return view('transactions.receipt', compact('transaction'));
+        return view('transactions.print', compact('transaction'));
     }
 
 
@@ -103,6 +103,7 @@ class TransactionController extends Controller
             'payment_method' => 'required|in:cash,card,transfer',
             'amount_paid' => 'required|integer|min:0',
             'discount_amount' => 'nullable|integer|min:0',
+            'customer_name' => 'nullable|string|max:255', // Add this line
         ]);
 
         try {
@@ -164,6 +165,7 @@ class TransactionController extends Controller
                 'total_amount' => $total,
                 'amount_paid' => $amountPaid,
                 'change' => $amountPaid - $total,
+                'customer_name' => $request->customer_name, // Add this line
             ]);
 
             // Create transaction details
@@ -189,7 +191,8 @@ class TransactionController extends Controller
                 'discount' => $discountAmount,
                 'total' => $total,
                 'amount_paid' => $amountPaid,
-                'change' => $amountPaid - $total
+                'change' => $amountPaid - $total,
+                'customer_name' => $request->customer_name, // Add this line
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

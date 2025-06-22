@@ -98,6 +98,13 @@
                             <span class="text-gray-600">Diskon:</span>
                             <span id="discount-display" class="font-medium">Rp 0</span>
                         </div>
+                        <!-- Add this after the discount input -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan (Opsional)</label>
+                            <input type="text" id="customer-name"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Nama pelanggan">
+                        </div>
                         <div class="flex justify-between items-center text-lg font-semibold border-t pt-2">
                             <span>Total:</span>
                             <span id="total-amount">Rp 0</span>
@@ -114,6 +121,23 @@
                                 <option value="card">Kartu</option>
                                 <option value="transfer">Transfer</option>
                             </select>
+                        </div>
+
+                        <!-- Add this after the payment method select -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status Pembayaran</label>
+                            <div class="flex items-center space-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="payment_status" value="paid" checked
+                                        class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                                    <span class="ml-2">Lunas</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="payment_status" value="unpaid"
+                                        class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300">
+                                    <span class="ml-2">Tidak Lunas</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div>
@@ -530,23 +554,29 @@
             const amountPaidInput = document.getElementById('amount-paid');
             const amountPaid = amountPaidInput ? parseFloat(amountPaidInput.value) || 0 : 0;
 
-            if (amountPaid < total) {
+            // Get payment status
+            const paymentStatus = document.querySelector('input[name="payment_status"]:checked')?.value || 'paid';
+
+            if (paymentStatus === 'paid' && amountPaid < total) {
                 alert('Jumlah pembayaran tidak mencukupi!');
                 return;
             }
 
             const paymentMethodSelect = document.getElementById('payment-method');
             const paymentMethod = paymentMethodSelect ? paymentMethodSelect.value : 'cash';
+            const customerName = document.getElementById('customer-name')?.value || null;
 
             const data = {
                 items: cart.map(item => ({
                     product_id: item.id,
                     quantity: item.quantity,
-                    serving_name: item.servingName || null // Make sure this matches backend expectation
+                    serving_name: item.servingName || null
                 })),
                 payment_method: paymentMethod,
                 amount_paid: amountPaid,
-                discount_amount: discountAmount
+                discount_amount: discountAmount,
+                customer_name: customerName,
+                payment_status: paymentStatus // Add payment status
             };
 
             const processBtn = document.getElementById('process-transaction');
@@ -590,6 +620,95 @@
                         processBtn.disabled = cart.length === 0;
                     }
                 });
+        }
+
+        function showSuccessModal(data) {
+            const modal = document.getElementById('success-modal');
+            if (!modal) return;
+
+            // Update success modal with transaction details
+            document.getElementById('success-subtotal').textContent = `Rp ${data.subtotal.toLocaleString('id-ID')}`;
+            document.getElementById('success-discount').textContent = `Rp ${data.discount.toLocaleString('id-ID')}`;
+            document.getElementById('success-total').textContent = `Rp ${data.total.toLocaleString('id-ID')}`;
+            document.getElementById('success-paid').textContent = `Rp ${data.amount_paid.toLocaleString('id-ID')}`;
+            document.getElementById('success-change').textContent = `Rp ${data.change.toLocaleString('id-ID')}`;
+
+            // Add payment status to success modal
+            const paymentStatusInfo = document.createElement('p');
+            paymentStatusInfo.className = 'text-gray-600';
+            const statusText = data.payment_status === 'paid' ? 'Lunas' : 'Tidak Lunas';
+            const statusColor = data.payment_status === 'paid' ? 'text-green-600' : 'text-red-600';
+            paymentStatusInfo.innerHTML =
+                `<span class="font-medium">Status:</span> <span class="${statusColor}">${statusText}</span>`;
+            document.querySelector('.text-left.mb-4.space-y-1').prepend(paymentStatusInfo);
+
+            // Add customer name to success modal if exists
+            if (data.customer_name) {
+                const customerInfo = document.createElement('p');
+                customerInfo.className = 'text-gray-600';
+                customerInfo.innerHTML = `<span class="font-medium">Pelanggan:</span> ${data.customer_name}`;
+                document.querySelector('.text-left.mb-4.space-y-1').prepend(customerInfo);
+            }
+
+            // Remove any existing print button event listener
+            const oldPrintBtn = document.getElementById('print-receipt');
+            if (oldPrintBtn) {
+                oldPrintBtn.replaceWith(oldPrintBtn.cloneNode(true));
+            }
+
+            // Add event listener to new print button
+            const printBtn = document.getElementById('print-receipt');
+            if (printBtn) {
+                printBtn.addEventListener('click', () => {
+                    window.open(`/transactions/${data.transaction_id}/print`, '_blank');
+                });
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function showSuccessModal(data) {
+            const modal = document.getElementById('success-modal');
+            if (!modal) return;
+
+            // Update success modal with transaction details
+            document.getElementById('success-subtotal').textContent = `Rp ${data.subtotal.toLocaleString('id-ID')}`;
+            document.getElementById('success-discount').textContent = `Rp ${data.discount.toLocaleString('id-ID')}`;
+            document.getElementById('success-total').textContent = `Rp ${data.total.toLocaleString('id-ID')}`;
+            document.getElementById('success-paid').textContent = `Rp ${data.amount_paid.toLocaleString('id-ID')}`;
+            document.getElementById('success-change').textContent = `Rp ${data.change.toLocaleString('id-ID')}`;
+
+            // Add customer name to success modal if exists
+            if (data.customer_name) {
+                const customerInfo = document.createElement('p');
+                customerInfo.className = 'text-gray-600';
+                customerInfo.innerHTML = `<span class="font-medium">Pelanggan:</span> ${data.customer_name}`;
+                document.querySelector('.text-left.mb-4.space-y-1').prepend(customerInfo);
+            }
+
+            // Rest of the function remains the same...
+        }
+
+        function newTransaction() {
+            // Reset cart
+            cart = [];
+            updateCartDisplay();
+            updateTotal();
+
+            // Reset form
+            document.getElementById('discount-amount').value = '';
+            document.getElementById('amount-paid').value = '';
+            document.getElementById('payment-method').value = 'cash';
+            document.getElementById('customer-name').value = ''; // Reset customer name
+            document.getElementById('change-display').classList.add('hidden');
+
+            // Close modal
+            const modal = document.getElementById('success-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
         }
 
         function showSuccessModal(data) {

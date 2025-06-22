@@ -7,6 +7,23 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* @media print {
+            body {
+                width: 76mm;
+                margin: 0 auto;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none;
+            }
+
+            .receipt-container {
+                box-shadow: none;
+            }
+        }
+            */
+
         @media print {
             body {
                 width: 76mm;
@@ -22,6 +39,18 @@
                 box-shadow: none;
             }
         }
+
+        @page {
+            size: 76mm auto;
+            margin: 0;
+        }
+
+        body,
+        html {
+            overflow: visible !important;
+        }
+
+
 
         body {
             background-color: #f5f7fa;
@@ -144,7 +173,8 @@
                 <h1 class="text-2xl font-bold tracking-tight">PPBA MARKET</h1>
             </div>
             <div class="text-center text-xs opacity-90">
-                <p><i class="fas fa-map-marker-alt mr-1"></i> Jl. Contoh No. 123, Kota Contoh</p>
+                <p><i class="fas fa-map-marker-alt mr-1"></i> XW75+HF4, Dusun Gempolan, Ketanon, Kec. Kedungwaru,
+                    Kabupaten Tulungagung, Jawa Timur 66229</p>
                 <p><i class="fas fa-phone-alt mr-1"></i> 0812 3456 789 | ppba@market.com</p>
                 <p class="mt-1 text-[11px] opacity-80">Buka Setiap Hari 08:00 - 22:00</p>
             </div>

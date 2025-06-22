@@ -21,6 +21,8 @@ return new class extends Migration
             $table->integer('total_amount');
             $table->integer('amount_paid');
             $table->integer('change');
+            $table->string('customer_name')->nullable();
+            $table->enum('payment_status', ['paid', 'unpaid'])->default('paid'); // Add this line
             $table->timestamps();
         });
     }
